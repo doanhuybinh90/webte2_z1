@@ -1,0 +1,111 @@
+<script setup lang="tsx">
+import { onMounted, ref } from "vue";
+import { GetLaureateById, LaureateDetails } from "@/helpers/API";
+
+const { id } = defineProps({
+  id: {
+    type: String,
+    required: true,
+  },
+});
+
+const laureate = ref<LaureateDetails | null>(null);
+
+onMounted(async () => {
+  await GetLaureateById(id).then((data) => {
+    laureate.value = data.data[0];
+  });
+});
+</script>
+
+<template>
+  <div class="px-8 mt-4">
+    <span class="text-5xl" v-if="laureate?.name">
+      {{ laureate?.name }}
+      <span class="gradient-text">{{ laureate?.surname }}</span> ({{
+        laureate?.birth
+      }}
+      - {{ laureate?.death ?? "..." }})
+    </span>
+    <span
+      :class="{
+        'text-5xl': laureate?.organisation.length < 55,
+        'text-3xl': laureate?.organisation.length > 55,
+      }"
+      v-else-if="laureate?.organisation"
+    >
+      <span class="gradient-text">{{ laureate?.organisation }} </span>
+      ({{ laureate?.birth }} -
+      {{ (laureate?.death ?? "").length > 0 ? laureate.death : " still" }})
+    </span>
+    <ul class="flex flex-column gap-2" style="list-style-type: none">
+      <li><span class="font-bold">Country:</span> {{ laureate?.country }}</li>
+      <li><span class="font-bold">Category:</span> {{ laureate?.category }}</li>
+      <li>
+        <span class="font-bold">Description (SK):</span>
+        {{ laureate?.contribution_sk }}
+      </li>
+      <li>
+        <span class="font-bold">Description (EN):</span>
+        {{ laureate?.contribution_en }}
+      </li>
+      <li>
+        <span class="font-bold" v-if="laureate?.language_sk"
+          >Language (SK):</span
+        >
+        {{ laureate?.language_sk }}
+      </li>
+      <li>
+        <span class="font-bold" v-if="laureate?.language_en"
+          >Language (EN):</span
+        >
+        {{ laureate?.language_en }}
+      </li>
+      <li>
+        <span class="font-bold" v-if="laureate?.genre_sk">Genre (SK):</span>
+        {{ laureate?.genre_sk }}
+      </li>
+      <li>
+        <span class="font-bold" v-if="laureate?.genre_en">Genre (EN):</span>
+        {{ laureate?.genre_en }}
+      </li>
+    </ul>
+  </div>
+</template>
+
+<style scoped>
+.gradient-text {
+  background: linear-gradient(
+    74deg,
+    rgb(66, 133, 244) 0px,
+    rgb(155, 114, 203) 9%,
+    rgb(217, 101, 112) 20%,
+    rgb(217, 101, 112) 24%,
+    rgb(155, 114, 203) 35%,
+    rgb(66, 133, 244) 44%,
+    rgb(155, 114, 203) 50%,
+    rgb(217, 101, 112) 56%,
+    rgb(217, 101, 112) 60%,
+    rgb(155, 114, 203) 71%,
+    rgb(66, 133, 244) 80%,
+    rgb(155, 114, 203) 89%,
+    rgb(217, 101, 112) 100%
+  );
+  color: #fff; /* White text for better contrast */
+  padding: 5px; /* Add some padding for better readability */
+  background-clip: text;
+  animation: textShine 10s linear infinite;
+  background-size: 500% auto;
+
+  -webkit-text-fill-color: transparent;
+}
+
+@keyframes textShine {
+  0% {
+    background-position: 0% 50%;
+  }
+  100% {
+    background-position: 100% 50%;
+  }
+}
+</style>

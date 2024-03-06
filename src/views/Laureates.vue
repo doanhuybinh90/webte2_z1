@@ -1,12 +1,23 @@
 <script setup lang="tsx">
-import DataTable from "primevue/datatable";
-import Column from "primevue/column";
-import Paginator, { PageState } from "primevue/paginator";
 import { onMounted, reactive, ref, watch } from "vue";
-import { GetLaureates } from "@/helpers/API";
-import { useLaureatesStore } from "@/stores/laureates.store";
-import Dropdown from "primevue/dropdown";
 
+import { useLaureatesStore } from "@/stores/laureates.store";
+import { useUserStore } from "@/stores/user.store";
+import { GetLaureates, DeleteLaureate } from "@/helpers/API";
+
+import Paginator, { PageState } from "primevue/paginator";
+import InlineMessage from "primevue/inlinemessage";
+import ConfirmDialog from "primevue/confirmdialog";
+import { useConfirm } from "primevue/useconfirm";
+import { useToast } from "primevue/usetoast";
+import DataTable from "primevue/datatable";
+import Dropdown from "primevue/dropdown";
+import Column from "primevue/column";
+import Toast from "primevue/toast";
+import Card from "primevue/card";
+
+const confirm = useConfirm();
+const toast = useToast();
 const { state } = useLaureatesStore();
 
 onMounted(async () => {
@@ -115,9 +126,30 @@ async function refetchWithFilter() {
   state.page = 1;
   state.first = 0;
 }
+
+const { user } = useUserStore();
+function deleteLaureate(id: string) {
+  confirm.require({
+    message: "Are you sure you want to delete this laureate?",
+    accept: async () => {
+      const data = await DeleteLaureate(id);
+      if (data.success) {
+        await refetchWithFilter();
+        toast.add({
+          severity: "success",
+          summary: "Success",
+          detail: "Laureate deleted successfully",
+          life: 3000,
+        });
+      }
+    },
+  });
+}
 </script>
 
 <template>
+  <Toast></Toast>
+  <ConfirmDialog></ConfirmDialog>
   <div class="px-4 sm:px-6">
     <h1 class="text-center">Laureates</h1>
     <div class="flex flex-column md:flex-row gap-0 md:gap-8 mb-4">
@@ -146,121 +178,135 @@ async function refetchWithFilter() {
         </Dropdown>
       </div>
     </div>
-    <DataTable :value="state.laureates">
-      <Column field="year" header="Year" v-if="!selectedYear">
-        <template #header>
-          <span
-            class="flex align-items-center justify-content-center cursor-pointer"
-            style="order: 2; padding-left: 1rem"
-          >
-            <i
-              class="pi pi-sort-alt"
-              v-if="sort.year === undefined"
-              @click="handleFirstSortClick('year')"
-            ></i>
-            <i
-              class="pi pi-sort-amount-up-alt"
-              v-if="sort.year === 'asc'"
-              @click="sort.year = 'desc'"
-            ></i>
-            <i
-              class="pi pi-sort-amount-down-alt"
-              v-if="sort.year === 'desc'"
-              @click="sort.year = 'asc'"
-            ></i>
-          </span>
-        </template>
-      </Column>
-      <Column field="name" header="First Name">
-        <template #header>
-          <span
-            class="flex align-items-center justify-content-center cursor-pointer"
-            style="order: 2; padding-left: 1rem"
-          >
-            <i
-              class="pi pi-sort-alt"
-              v-if="sort.name === undefined"
-              @click="handleFirstSortClick('name')"
-            ></i>
-            <i
-              class="pi pi-sort-amount-up-alt"
-              v-if="sort.name === 'asc'"
-              @click="sort.name = 'desc'"
-            ></i>
-            <i
-              class="pi pi-sort-amount-down-alt"
-              v-if="sort.name === 'desc'"
-              @click="sort.name = 'asc'"
-            ></i>
-          </span>
-        </template>
-        <template #body="slotProps">
-          <router-link :to="`/laureates/${slotProps.data.id}`">{{
-            slotProps.data.name
-          }}</router-link>
-        </template>
-      </Column>
-      <Column field="surname" header="Surname">
-        <template #header>
-          <span
-            class="flex align-items-center justify-content-center cursor-pointer"
-            style="order: 2; padding-left: 1rem"
-          >
-            <i
-              class="pi pi-sort-alt"
-              v-if="sort.surname === undefined"
-              @click="handleFirstSortClick('surname')"
-            ></i>
-            <i
-              class="pi pi-sort-amount-up-alt"
-              v-if="sort.surname === 'asc'"
-              @click="sort.surname = 'desc'"
-            ></i>
-            <i
-              class="pi pi-sort-amount-down-alt"
-              v-if="sort.surname === 'desc'"
-              @click="sort.surname = 'asc'"
-            ></i>
-          </span>
-        </template>
-      </Column>
-      <Column field="category" header="Category" v-if="!selectedCategory">
-        <template #header>
-          <span
-            class="flex align-items-center justify-content-center cursor-pointer"
-            style="order: 2; padding-left: 1rem"
-          >
-            <i
-              class="pi pi-sort-alt"
-              v-if="sort.category === undefined"
-              @click="handleFirstSortClick('category')"
-            ></i>
-            <i
-              class="pi pi-sort-amount-up-alt"
-              v-if="sort.category === 'asc'"
-              @click="sort.category = 'desc'"
-            ></i>
-            <i
-              class="pi pi-sort-amount-down-alt"
-              v-if="sort.category === 'desc'"
-              @click="sort.category = 'asc'"
-            ></i>
-          </span>
-        </template>
-      </Column>
-    </DataTable>
-    <Paginator
-      :rows="10"
-      :rowsPerPageOptions="[10, 20, 50]"
-      :totalRecords="state.totalRecords"
-      @page="changePage($event)"
-      v-model:first="state.first"
-      :pageLinkSize="3"
-      :pt="{
-        root: {
-          class: 'px-0',
-        },
-      }"
-    />
+    <Card>
+      <template #content>
+        <DataTable :value="state.laureates">
+          <Column field="year" header="Year" v-if="!selectedYear">
+            <template #header>
+              <span
+                class="flex align-items-center justify-content-center cursor-pointer"
+                style="order: 2; padding-left: 1rem"
+              >
+                <i
+                  class="pi pi-sort-alt"
+                  v-if="sort.year === undefined"
+                  @click="handleFirstSortClick('year')"
+                ></i>
+                <i
+                  class="pi pi-sort-amount-up-alt"
+                  v-if="sort.year === 'asc'"
+                  @click="sort.year = 'desc'"
+                ></i>
+                <i
+                  class="pi pi-sort-amount-down-alt"
+                  v-if="sort.year === 'desc'"
+                  @click="sort.year = 'asc'"
+                ></i>
+              </span>
+            </template>
+          </Column>
+          <Column field="name" header="First Name">
+            <template #header>
+              <span
+                class="flex align-items-center justify-content-center cursor-pointer"
+                style="order: 2; padding-left: 1rem"
+              >
+                <i
+                  class="pi pi-sort-alt"
+                  v-if="sort.name === undefined"
+                  @click="handleFirstSortClick('name')"
+                ></i>
+                <i
+                  class="pi pi-sort-amount-up-alt"
+                  v-if="sort.name === 'asc'"
+                  @click="sort.name = 'desc'"
+                ></i>
+                <i
+                  class="pi pi-sort-amount-down-alt"
+                  v-if="sort.name === 'desc'"
+                  @click="sort.name = 'asc'"
+                ></i>
+              </span>
+            </template>
+            <template #body="slotProps">
+              <router-link :to="`/laureates/${slotProps.data.id}`">{{
+                slotProps.data.name
+              }}</router-link>
+            </template>
+          </Column>
+          <Column field="surname" header="Surname">
+            <template #header>
+              <span
+                class="flex align-items-center justify-content-center cursor-pointer"
+                style="order: 2; padding-left: 1rem"
+              >
+                <i
+                  class="pi pi-sort-alt"
+                  v-if="sort.surname === undefined"
+                  @click="handleFirstSortClick('surname')"
+                ></i>
+                <i
+                  class="pi pi-sort-amount-up-alt"
+                  v-if="sort.surname === 'asc'"
+                  @click="sort.surname = 'desc'"
+                ></i>
+                <i
+                  class="pi pi-sort-amount-down-alt"
+                  v-if="sort.surname === 'desc'"
+                  @click="sort.surname = 'asc'"
+                ></i>
+              </span>
+            </template>
+          </Column>
+          <Column field="category" header="Category" v-if="!selectedCategory">
+            <template #header>
+              <span
+                class="flex align-items-center justify-content-center cursor-pointer"
+                style="order: 2; padding-left: 1rem"
+              >
+                <i
+                  class="pi pi-sort-alt"
+                  v-if="sort.category === undefined"
+                  @click="handleFirstSortClick('category')"
+                ></i>
+                <i
+                  class="pi pi-sort-amount-up-alt"
+                  v-if="sort.category === 'asc'"
+                  @click="sort.category = 'desc'"
+                ></i>
+                <i
+                  class="pi pi-sort-amount-down-alt"
+                  v-if="sort.category === 'desc'"
+                  @click="sort.category = 'asc'"
+                ></i>
+              </span>
+            </template>
+          </Column>
+          <Column v-if="user.isLogged">
+            <template #body="slotProps">
+              <InlineMessage
+                class="cursor-pointer"
+                @click="deleteLaureate(slotProps.data.id)"
+              >
+                Delete
+              </InlineMessage>
+            </template>
+          </Column>
+        </DataTable>
+        <Paginator
+          :rows="10"
+          :rowsPerPageOptions="[10, 20, 50]"
+          :totalRecords="state.totalRecords"
+          @page="changePage($event)"
+          v-model:first="state.first"
+          :pageLinkSize="3"
+          :pt="{
+            root: {
+              class: 'px-0',
+            },
+          }"
+        />
+      </template>
+    </Card>
   </div>
 </template>

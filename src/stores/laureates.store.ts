@@ -2,7 +2,7 @@ import { defineStore } from "pinia";
 import { reactive } from "vue";
 import { Laureate, Organisation } from "@/helpers/API";
 
-export const useLaureatesStore = defineStore("counter", () => {
+export const useLaureatesStore = defineStore("laureates", () => {
   const state = reactive({
     laureates: [] as Laureate[],
     page: 1,

@@ -10,13 +10,5 @@ export default defineConfig({
       "@": path.join(__dirname, "./src"),
     },
   },
-  server: {
-    proxy: {
-      "/api": {
-        target: "https://node33.webte.fei.stuba.sk/api",
-        changeOrigin: true,
-        rewrite: (path) => path.replace(/^\/api/, ""),
-      },
-    },
-  },
+  base: "/z1/",
 });

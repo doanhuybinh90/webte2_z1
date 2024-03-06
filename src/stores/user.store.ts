@@ -1,22 +1,27 @@
+import { router } from "@/router";
 import { defineStore } from "pinia";
-import { reactive, ref } from "vue";
+import { reactive } from "vue";
 
-export const useUserStore = defineStore("counter", () => {
+import { Logout } from "@/helpers/API";
+
+export const useUserStore = defineStore("user", () => {
   const user = reactive({
     username: localStorage.getItem("username") || "",
     email: localStorage.getItem("email") || "",
+    isLogged: localStorage.getItem("isLogged") === "true",
   });
 
-  const isLogged = ref(localStorage.getItem("isLogged") === "true");
+  const logout = async () => {
+    await Logout();
 
-  const logout = () => {
     user.username = "";
     user.email = "";
-    isLogged.value = false;
+    user.isLogged = false;
     localStorage.removeItem("username");
     localStorage.removeItem("email");
     localStorage.removeItem("isLogged");
+    router.push("/z1/login");
   };
 
-  return { user, isLogged, logout };
+  return { user, logout };
 });

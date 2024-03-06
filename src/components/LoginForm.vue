@@ -5,6 +5,10 @@ import Button from "primevue/button";
 import Dialog from "primevue/dialog";
 import InputOtp from "primevue/inputotp";
 
+import { GoogleLoginAuth } from "@/helpers/API";
+
+import { GoogleLogin, decodeCredential } from "vue3-google-login";
+
 import { useUserStore } from "@/stores/user.store";
 const userStore = useUserStore();
 import { useToast } from "primevue/usetoast";
@@ -28,6 +32,7 @@ const validateLoginForm = async () => {
       severity: "error",
       summary: "Login failed",
       detail: loginCheck.message,
+      life: 3000,
     });
     loginInvalid.value = true;
     return;
@@ -47,14 +52,15 @@ const completeLogin = async () => {
     severity: "success",
     summary: "Login successful",
     detail: "You have successfully logged in",
+    life: 3000,
   });
-  userStore.isLogged = true;
+  userStore.user.isLogged = true;
   userStore.user.email = user.value.login;
   userStore.user.username = otpCheck.username!;
   localStorage.setItem("isLogged", "true");
   localStorage.setItem("email", user.value.login);
   localStorage.setItem("username", otpCheck.username!);
-  router.push("/");
+  router.push("/z1");
 };
 
 const loginInvalid = ref(false);
@@ -62,9 +68,31 @@ const loginInvalid = ref(false);
 const dialogVisible = ref(false);
 const user2faCode = ref("");
 const user2faCodeInvalid = ref(false);
+
+const googleLoginCallback = async (response: any) => {
+  console.log(response);
+  const userData = decodeCredential(response.credential) as any;
+  console.log("Handle the userData", userData);
+
+  await GoogleLoginAuth(userData.email, userData.name).then(() => {
+    toast.add({
+      severity: "success",
+      summary: "Login successful",
+      detail: "You have successfully logged in",
+      life: 3000,
+    });
+
+    userStore.user.isLogged = true;
+    userStore.user.email = userData.email;
+    userStore.user.username = userData.name;
+
+    router.push("/z1/admin");
+  });
+};
 </script>
 
 <template>
+  <Toast />
   <Dialog
     v-model:visible="dialogVisible"
     modal
@@ -135,8 +163,14 @@ const user2faCodeInvalid = ref(false);
         />
       </div>
     </div>
-    <div>
+    <div class="flex flex-column gap-2">
       <Button label="Login" @click="validateLoginForm" />
+      <GoogleLogin :callback="googleLoginCallback" />
+      <Button
+        text
+        label="No account? Register"
+        @click="router.push('/z1/register')"
+      />
     </div>
   </div>
 </template>

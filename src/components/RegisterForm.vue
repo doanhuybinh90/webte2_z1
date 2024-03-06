@@ -4,21 +4,22 @@ import Password from "primevue/password";
 import Button from "primevue/button";
 import Dialog from "primevue/dialog";
 import InputOtp from "primevue/inputotp";
+import InlineMessage from "primevue/inlinemessage";
 
 import { useUserStore } from "@/stores/user.store";
-
 import { useToast } from "primevue/usetoast";
-const toast = useToast();
-
 import { router } from "@/router";
+import { decodeCredential, GoogleLogin } from "vue3-google-login";
+import { ref } from "vue";
 
 import {
   VerifyTwoFactorAuth,
   ValidateEmail,
   RegisterUser,
+  GoogleLoginAuth,
 } from "@/helpers/API";
-import { ref } from "vue";
 
+const toast = useToast();
 const { qrCodeUrl } = defineProps(["qrCodeUrl"]);
 const userStore = useUserStore();
 const newUser = ref({
@@ -105,26 +106,49 @@ async function completeRegistration() {
             severity: "success",
             summary: "Success",
             detail: "Registration successful",
+            life: 3000,
           });
           userStore.user.email = newUser.value.email;
           userStore.user.username = newUser.value.username;
-          userStore.isLogged = true;
+          userStore.user.isLogged = true;
           localStorage.setItem("isLogged", "true");
           localStorage.setItem("email", newUser.value.email);
           localStorage.setItem("username", newUser.value.username!);
           dialogVisible.value = false;
-          router.push("/login");
+          router.push("/z1/login");
         })
         .catch((err) => {
           toast.add({
             severity: "error",
             summary: "Error",
             detail: err.message,
+            life: 3000,
           });
         });
     }
   });
 }
+
+const googleLoginCallback = async (response: any) => {
+  console.log(response);
+  const userData = decodeCredential(response.credential) as any;
+  console.log("Handle the userData", userData);
+
+  await GoogleLoginAuth(userData.email, userData.name).then(() => {
+    toast.add({
+      severity: "success",
+      summary: "Login successful",
+      detail: "You have successfully logged in",
+      life: 3000,
+    });
+
+    userStore.user.isLogged = true;
+    userStore.user.email = userData.email;
+    userStore.user.username = userData.name;
+
+    router.push("/z1/admin");
+  });
+};
 </script>
 
 <template>
@@ -180,13 +204,13 @@ async function completeRegistration() {
           />
         </template>
       </InputOtp>
-      <span
+      <InlineMessage
         v-if="user2faCodeInvalid"
         class="text-xs block"
         style="color: #f3c623; font-weight: thin"
       >
         Invalid code
-      </span>
+      </InlineMessage>
     </div>
     <div class="flex justify-content-end gap-2 pt-4">
       <Button
@@ -210,7 +234,7 @@ async function completeRegistration() {
     <div class="w-9 md:w-7">
       <h1 class="text-center">Register</h1>
       <div class="flex flex-column gap-2 pb-4">
-        <div class="w-full">
+        <div class="flex flex-column gap-1">
           <Input
             v-model="newUser.username"
             placeholder="Username"
@@ -218,15 +242,15 @@ async function completeRegistration() {
             @input="usernameInvalid = false"
             class="w-full"
           />
-          <span
+          <InlineMessage
             v-if="usernameInvalid"
-            class="text-xs block"
+            class="text-xs"
             style="color: #f3c623; font-weight: thin"
           >
             Username must be between 4 and 32 characters
-          </span>
+          </InlineMessage>
         </div>
-        <div>
+        <div class="flex flex-column gap-1">
           <Input
             v-model="newUser.email"
             placeholder="Email"
@@ -234,24 +258,24 @@ async function completeRegistration() {
             @input="emailInvalid = false"
             class="w-full"
           />
-          <span
+          <InlineMessage
             v-if="emailInvalid"
-            class="text-xs block"
+            class="text-xs"
             style="color: #f3c623; font-weight: thin"
           >
             Email is invalid
-          </span>
-          <span
+          </InlineMessage>
+          <InlineMessage
             v-if="emailExists"
-            class="text-xs block"
+            class="text-xs"
             style="color: #f3c623; font-weight: thin"
           >
             Email already registered. Go to
-            <span @click="router.push('/login')">Login</span>
-          </span>
+            <span @click="router.push('/z1/login')">Login</span>
+          </InlineMessage>
         </div>
 
-        <div>
+        <div class="flex flex-column gap-1">
           <Password
             v-model="newUser.password"
             placeholder="Password"
@@ -261,15 +285,15 @@ async function completeRegistration() {
             @input="passwordInvalid = false"
             toggleMask
           />
-          <span
+          <InlineMessage
             v-if="passwordInvalid"
-            class="text-xs block"
+            class="text-xs"
             style="color: #f3c623; font-weight: thin"
           >
             Password must be at least 8 characters
-          </span>
+          </InlineMessage>
         </div>
-        <div>
+        <div class="flex flex-column gap-1">
           <Password
             v-model="confirmPassword"
             placeholder="Confirm Password"
@@ -280,18 +304,20 @@ async function completeRegistration() {
             @input="confirmPasswordInvalid = false"
             toggleMask
           />
-          <span
+          <InlineMessage
             v-if="confirmPasswordInvalid"
-            class="text-xs block"
+            class="text-xs"
             style="color: #f3c623; font-weight: thin"
           >
             Passwords do not match
-          </span>
+          </InlineMessage>
         </div>
       </div>
     </div>
-    <div>
+    <div class="flex flex-column gap-2">
       <Button label="Register" @click="validateRegisterForm" />
+      <GoogleLogin :callback="googleLoginCallback" />
+      <Button text label="Have account? Login" @click="router.push('/z1/login')" />
     </div>
   </div>
 </template>

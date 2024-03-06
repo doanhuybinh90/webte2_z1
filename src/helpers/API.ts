@@ -1,4 +1,4 @@
-const BASE_URL = "https://node33.webte.fei.stuba.sk/api";
+const BASE_URL = "https://node33.webte.fei.stuba.sk/z1/api";
 import axios from "axios";
 
 export interface Laureate {
@@ -18,7 +18,26 @@ export interface LaureateDetails {
   surname: string;
   organisation: string;
   year: string;
+  sex: string;
   birth?: string;
+  death?: string;
+  language_sk?: string;
+  language_en?: string;
+  genre_sk?: string;
+  genre_en?: string;
+  contribution_sk: string;
+  contribution_en: string;
+}
+
+export interface AddLaureateBody {
+  category: string;
+  country: string;
+  name: string;
+  surname: string;
+  organisation: string;
+  year: string;
+  sex: string;
+  birth: string;
   death?: string;
   language_sk?: string;
   language_en?: string;
@@ -149,4 +168,40 @@ export const RegisterUser = async (body: User) => {
 export const GetLaureateById = async (id: string) => {
   const response = await axios.get(`${BASE_URL}/laureates`, { params: { id } });
   return response.data as { data: LaureateDetails[] };
+};
+
+export const IsUserAuthorized = async () => {
+  const response = await axios.get(`${BASE_URL}/users/isAuthorized/`);
+  return response.data as {
+    isAuthorized: boolean;
+    username: string;
+    email: string;
+  };
+};
+
+export const AddLaureate = async (body: AddLaureateBody) => {
+  const response = await axios.post(`${BASE_URL}/laureates/`, {
+    ...body,
+  });
+  return response.data as { success: boolean; isOrganisation: boolean };
+};
+
+export const DeleteLaureate = async (id: string) => {
+  const response = await axios.post(`${BASE_URL}/laureates/delete/`, {
+    id,
+  });
+  return response.data as { success: boolean };
+};
+
+export const GoogleLoginAuth = async (email: string, username: string) => {
+  const response = await axios.post(`${BASE_URL}/users/googleLogin/`, {
+    username,
+    email,
+  });
+  return response.data as { success: boolean };
+};
+
+export const Logout = async () => {
+  const response = await axios.get(`${BASE_URL}/users/logout/`);
+  return response.data as { success: boolean };
 };

@@ -19,7 +19,7 @@ window.addEventListener("visibilitychange", async () => {
 
 <template>
   <TopBar />
-  <div class="pb-4">
+  <div>
     <router-view />
   </div>
   <Toast />

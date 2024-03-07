@@ -150,7 +150,7 @@ function deleteLaureate(id: string) {
 <template>
   <Toast></Toast>
   <ConfirmDialog></ConfirmDialog>
-  <div class="px-4 sm:px-6">
+  <div class="px-4 sm:px-6 pb-4">
     <h1 class="text-center">Laureates</h1>
     <div class="flex flex-column md:flex-row gap-0 md:gap-8 mb-4">
       <div class="flex flex-row gap-2 align-items-center">

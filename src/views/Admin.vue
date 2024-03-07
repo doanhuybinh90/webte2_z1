@@ -103,11 +103,11 @@ async function submitForm() {
       });
       router.push(data.isOrganisation ? "/z1/organisations" : "/z1/laureates");
     })
-    .catch(() => {
+    .catch((error) => {
       toast.add({
         severity: "error",
-        summary: "Error",
-        detail: "Laureate is not added",
+        summary: "Laureate is not added",
+        detail: error.message,
         life: 3000,
       });
     });
